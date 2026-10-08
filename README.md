@@ -1,4 +1,4 @@
-# Sathi (साथी)
+# Kagajpatra
 
 Bilingual (English / नेपाली) guide to Nepali government services — build for a
 1-day hackathon. Big, accessible UI; voice input (mic) and read-aloud; AI
@@ -102,7 +102,7 @@ Dark mode is automatic via `prefers-color-scheme` and can be forced with
 | Steps | `.steps-list`, `.step` | Connected with CSS line |
 | Search bar | `.search-wrap` | Includes mic + submit |
 | Voice button | `.voice-btn` | 7 states, aria-live |
-| Toast | `.toast`, `window.sathiToast(msg, type)` | 6s auto-dismiss |
+| Toast | `.toast`, `window.KagajpatraToast(msg, type)` | 6s auto-dismiss |
 | Before-you-go card | `.byg-card`, `.byg-grid` | Summary row on detail page |
 | Skeleton | `.skeleton`, `.skeleton--text`, `.skeleton--card` | |
 
