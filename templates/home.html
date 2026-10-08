@@ -33,11 +33,12 @@
   </div>
 </section>
 
-<!-- ── Search bar ── -->
-<section class="section" aria-label="Search">
+<!-- ── Unified: search + AI ask ── -->
+<section class="section" aria-label="{{ t.unified_placeholder }}">
   <div class="container" style="max-width: 720px;">
 
-    <form id="search-form" action="{% url 'services:home' %}" method="get" role="search" aria-label="{{ t.search_placeholder }}" autocomplete="off">
+    <form id="unified-form" action="{% url 'services:home' %}" method="get" role="search" aria-label="{{ t.unified_placeholder }}" autocomplete="off">
+      {% csrf_token %}
       <div style="position: relative;">
         <div class="search-wrap" role="search">
 
@@ -50,12 +51,12 @@
           </span>
 
           <input
-            id="search-input"
+            id="unified-input"
             name="q"
             type="search"
             class="search-wrap__input"
-            placeholder="{{ t.search_placeholder }}"
-            aria-label="{{ t.search_placeholder }}"
+            placeholder="{{ t.unified_placeholder }}"
+            aria-label="{{ t.unified_placeholder }}"
             autocomplete="off"
             spellcheck="false"
             value="{{ request.GET.q|default:'' }}">
@@ -64,10 +65,10 @@
           <button
             type="button"
             class="voice-btn"
-            id="search-mic-btn"
-            data-voice="search"
-            data-status-target="search-voice-status"
-            data-transcript-target="search-transcript"
+            id="unified-mic-btn"
+            data-voice="unified"
+            data-status-target="unified-voice-status"
+            data-transcript-target="unified-transcript"
             aria-label="{{ t.mic_hint }}"
             data-state="idle">
             <span aria-hidden="true">
@@ -97,8 +98,8 @@
 
         </div>
 
-        <!-- Instant search results dropdown -->
-        <div id="search-results" hidden role="listbox" aria-label="{{ t.search_placeholder }}"
+        <!-- Instant service results dropdown -->
+        <div id="unified-results" hidden role="listbox" aria-label="{{ t.unified_placeholder }}"
              style="position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:200;
                     background:var(--surface);border:1px solid var(--border);
                     border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);overflow:hidden;">
@@ -106,26 +107,43 @@
       </div>
 
       <!-- Voice status + transcript -->
-      <div class="voice-status" id="search-voice-status" role="status" aria-live="polite" style="margin-top: var(--space-3);"></div>
-      <div class="voice-transcript" id="search-transcript" aria-live="polite"></div>
+      <div class="voice-status" id="unified-voice-status" role="status" aria-live="polite"></div>
+      <div class="voice-transcript" id="unified-transcript" aria-live="polite"></div>
+
+      <!-- Quick service chips -->
+      <div class="service-chips" id="service-chips" role="group" aria-label="{{ t.services_heading }}">
+        {% for item in services|slice:":8" %}
+        <button type="button" class="chip chip--neutral service-chip"
+                data-href="{% url 'services:service_detail' item.slug %}">{{ item.name }}</button>
+        {% endfor %}
+      </div>
+
+      <!-- Thinking / status -->
+      <div class="ask-status" id="unified-status" role="status" aria-live="polite"></div>
+
+      <!-- AI answer -->
+      <div class="answer-card is-hidden" id="answer-card" aria-live="polite">
+        <div class="answer-text" id="answer-text"></div>
+        <div class="answer-meta">
+          <span>{{ t.answer_from }}:</span>
+          <span class="provider-badge" id="provider-badge">Gemma</span>
+          <button type="button" class="btn btn--ghost btn--sm" id="read-answer-btn">
+            <!-- Speaker icon -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+            {{ t.read_aloud }}
+          </button>
+        </div>
+      </div>
 
     </form>
 
     <p style="margin-top: var(--space-3); font-size: var(--text-sm); color: var(--text-2);">
       {{ t.search_example }}
     </p>
-
-    <!-- Hidden service data for client-side search -->
-    {% for item in services %}
-    <a class="visually-hidden"
-       href="{% url 'services:service_detail' item.slug %}"
-       data-service-name="{{ item.name }}"
-       data-service-tagline="{{ item.tagline }}"
-       data-service-tags="{{ item.name }} {{ item.tagline }}"
-       data-service-icon-html=""
-       aria-hidden="true"
-       tabindex="-1">{{ item.name }}</a>
-    {% endfor %}
 
   </div>
 </section>
@@ -190,9 +208,6 @@
     </div>
   </div>
 </section>
-
-<!-- ── AI ask ── -->
-{% include "partials/ask.html" %}
 
 <!-- ── Office hours ── -->
 <section class="section section--alt" id="hours" aria-labelledby="hours-heading">

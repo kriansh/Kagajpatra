@@ -161,10 +161,12 @@
       rec.onerror = (e) => {
         this._setstate("idle", onStateChange);
         const code = e.error || "unknown";
-        if (code === "no-speech")         onError("no_speech");
-        else if (code === "not-allowed")  onError("permission_denied");
-        else if (code === "aborted")      return; // user-initiated stop
-        else                              onError("unknown");
+        if (code === "no-speech")                   onError("no_speech");
+        else if (code === "not-allowed")            onError("permission_denied");
+        else if (code === "aborted")                return; // user-initiated stop
+        else if (code === "network")                onError("network_error");
+        else if (code === "language-not-supported") onError("lang_unsupported");
+        else                                        onError("voice_unsupported");
       };
 
       try { rec.start(); } catch (_) { /* already started */ }
@@ -222,6 +224,8 @@
       announce(msg);
     }
 
+    let errorShown = false;
+
     function onStateChange(state) {
       btn.setAttribute("data-state", state);
       if (waveform) waveform.style.display = state === "listening" ? "flex" : "none";
@@ -230,8 +234,11 @@
         else if (state === "processing") labelEl.textContent = t("processing");
         else labelEl.textContent = origLabel;
       }
-      if (state === "listening") setStatus(t("listening"), "");
-      if (state === "idle")      setStatus("", "");
+      if (state === "listening") { errorShown = false; setStatus(t("listening"), ""); }
+      /* Recognition errors fire onerror immediately followed by onend; the
+         resulting idle transition must NOT wipe the error message — only
+         clear status when no error is being shown. */
+      if (state === "idle" && !errorShown) setStatus("", "");
     }
 
     function onTranscript(text, isFinal) {
@@ -250,7 +257,10 @@
     }
 
     function onError(code) {
-      const msg = t(code) || t("no_answer");
+      /* t() falls back to the raw key when a string is missing — resolve
+         unknown codes to the friendly browser-support message instead. */
+      const msg = strings[code] || t("voice_unsupported");
+      errorShown = true;
       setStatus(msg, "error");
       announce(msg);
       if (liveTranscript) liveTranscript.dataset.visible = "false";
@@ -264,6 +274,7 @@
         voiceAdapter.stop();
         return;
       }
+      errorShown = false;
       setStatus("", "");
       voiceAdapter.start(
         (text, isFinal) => {
@@ -561,11 +572,243 @@
   }
 
   /* ============================================================
-     8. speechSynthesis (read-aloud)
-     Supports both English and Nepali. Nepali TTS falls back to
-     Hindi/Bengali/Marathi voices if ne-NP is unavailable — these
-     are the closest Devanagari-script voices present on most
-     Android and Windows devices.
+     7b. Unified bar (home page)
+     One input for both service search and AI questions.
+     Submit flow: best (partial, case-insensitive) service match →
+     open that service, otherwise fall back to the AI answer.
+     ============================================================ */
+  function initUnified() {
+    const form = document.getElementById("unified-form");
+    if (!form) return;
+
+    const input         = document.getElementById("unified-input");
+    const micBtn        = document.getElementById("unified-mic-btn");
+    const results       = document.getElementById("unified-results");
+    const statusEl      = document.getElementById("unified-status");
+    const answerCard    = document.getElementById("answer-card");
+    const answerText    = document.getElementById("answer-text");
+    const providerBadge = document.getElementById("provider-badge");
+    const readBtn       = document.getElementById("read-answer-btn");
+    let abortCtrl       = null;
+
+    /* Voice input → submit with the transcript */
+    if (micBtn && input) {
+      setupVoiceButton(micBtn, input, (text) => {
+        input.value = text;
+        form.requestSubmit();
+      });
+    }
+
+    /* Live service dropdown while typing */
+    if (input && results) {
+      input.addEventListener("input", () => {
+        const q = input.value.trim();
+        if (q.length < 2) {
+          results.innerHTML = "";
+          results.hidden = true;
+          return;
+        }
+        fetchSearch(q, results);
+      });
+
+      /* Close results on outside click */
+      document.addEventListener("click", (e) => {
+        if (!form.contains(e.target)) {
+          results.innerHTML = "";
+          results.hidden = true;
+        }
+      });
+    }
+
+    /* Quick service chips */
+    $$("#service-chips [data-href]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        window.location.href = chip.dataset.href;
+      });
+    });
+
+    /* Submit: open the best partial service match, else ask the AI */
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = (input.value || "").trim();
+      if (!question) return;
+
+      const match = bestServiceMatch(question);
+      if (match) {
+        window.location.href = match;
+        return;
+      }
+
+      /* No service match → AI answer (services-first fallback) */
+      if (abortCtrl) abortCtrl.abort();
+      abortCtrl = new AbortController();
+
+      /* Reset UI */
+      answerCard.classList.add("is-hidden");
+      answerText.textContent = "";
+      answerCard.dataset.answer = "";
+      setUnifiedStatus("thinking");
+
+      /* ── Streaming path ─────────────────────────────────────── */
+      try {
+        const resp = await fetch("/api/ask/stream/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: new URLSearchParams({ question }),
+          signal: abortCtrl.signal,
+        });
+
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+        /* Show the answer card immediately so text appears as it streams in */
+        setUnifiedStatus("");
+        answerCard.classList.remove("is-hidden");
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+        let provider = "gemini";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          /* SSE lines: "data: {...}\n\n" */
+          const lines = buffer.split("\n");
+          buffer = lines.pop(); /* keep incomplete last line */
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data:")) continue;
+            const jsonStr = trimmed.slice(5).trim();
+            if (!jsonStr || jsonStr === "[DONE]") continue;
+
+            let event;
+            try { event = JSON.parse(jsonStr); } catch (_) { continue; }
+
+            if (event.type === "chunk") {
+              /* Append streamed token to the display */
+              provider = event.provider || provider;
+              answerText.textContent += event.text;
+              answerCard.dataset.answer = answerText.textContent;
+              providerBadge.textContent =
+                provider === "ollama" ? t("provider_ollama") : t("provider_gemini");
+            } else if (event.type === "done") {
+              provider = event.provider || provider;
+              providerBadge.textContent =
+                provider === "ollama" ? t("provider_ollama") : t("provider_gemini");
+              const full = answerText.textContent;
+              if (full) announce(full.slice(0, 120));
+            } else if (event.type === "error") {
+              answerText.textContent = t("no_answer");
+              providerBadge.textContent = "—";
+            }
+          }
+        }
+        return; /* streaming finished cleanly */
+
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        console.warn("Streaming failed, falling back to blocking JSON:", err.message);
+      }
+
+      /* ── Non-streaming fallback ─────────────────────────────── */
+      try {
+        const resp = await fetch("/api/ask/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: new URLSearchParams({ question }),
+          signal: abortCtrl.signal,
+        });
+        const data = await resp.json();
+        if (!resp.ok || data.error) throw new Error(data.error || resp.statusText);
+
+        setUnifiedStatus("");
+        answerText.textContent = data.answer;
+        answerCard.dataset.answer = data.answer;
+        providerBadge.textContent =
+          data.provider === "ollama" ? t("provider_ollama") : t("provider_gemini");
+        answerCard.classList.remove("is-hidden");
+        announce(data.answer.slice(0, 120));
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        setUnifiedStatus("");
+        answerText.textContent = t("no_answer");
+        providerBadge.textContent = "—";
+        answerCard.classList.remove("is-hidden");
+        answerCard.dataset.answer = "";
+      }
+    });
+
+    function setUnifiedStatus(state) {
+      if (!statusEl) return;
+      if (state === "thinking") {
+        statusEl.innerHTML = `<span class="thinking-dots" aria-label="${t("thinking")}">
+          <span>.</span><span>.</span><span>.</span>
+        </span> ${t("thinking")}`;
+        announce(t("thinking"));
+      } else {
+        statusEl.innerHTML = "";
+      }
+    }
+
+    /* Read the answer aloud */
+    if (readBtn && answerCard) {
+      readBtn.addEventListener("click", () => {
+        const text = answerCard.dataset.answer || (answerText ? answerText.textContent : "");
+        speak(text, readBtn);
+      });
+    }
+  }
+
+  /* Best partial (case-insensitive) service match for a query.
+     Ranking: exact name > name contains query > tags contain query >
+     fuzzy (chars in order). Returns the service URL or null. */
+  function bestServiceMatch(q) {
+    const ql = q.toLowerCase().trim();
+    if (ql.length < 2) return null;
+
+    let best = null;
+    let bestScore = 0;
+
+    $$("[data-service-name]").forEach((el) => {
+      const name = (el.dataset.serviceName || "").toLowerCase();
+      const tags = (el.dataset.serviceTags || "").toLowerCase();
+
+      let score = 0;
+      if (name === ql) score = 100;
+      else if (name.includes(ql)) score = 80;
+      else if (tags.includes(ql)) score = 60;
+      else if (fuzzyMatch(name, ql) || fuzzyMatch(tags, ql)) score = 40;
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = el.href || el.dataset.href || null;
+      }
+    });
+
+    return best;
+  }
+
+  /* ============================================================
+     8. Read-aloud (text-to-speech)
+     Two engines:
+       1. Web Speech API speechSynthesis — used when the browser
+          exposes usable voices (Google Chrome ships Google cloud
+          voices: en + Devanagari-capable voices for Nepali).
+       2. Offline server fallback GET /api/tts/ (espeak-ng) — used
+          when speechSynthesis has no voices. Brave strips Google's
+          voices and systems without speech-dispatcher report zero
+          voices, so every utterance would fail with
+          "synthesis-failed". espeak-ng covers en + ne locally.
      ============================================================ */
   let voices = [];
   let activeReading = null;
@@ -601,6 +844,18 @@
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }
 
+  /* Web Speech is usable only when a voice that can actually read the
+     target language exists — otherwise speak() would silently pick an
+     unrelated language voice (or fail outright) and produce nothing. */
+  function canUseWebSpeech(forLang) {
+    if (!window.speechSynthesis || !voices.length) return false;
+    const target = forLang || lang;
+    if (target === "ne") {
+      return voices.some((v) => /^(ne|hi|bn|mr|ur)/.test((v.lang || "").toLowerCase()));
+    }
+    return true;
+  }
+
   function chunkText(text) {
     const sentences = text.match(/[^।.!?…]+[।.!?…]+|[^।.!?…]+$/g) || [text];
     const out = [];
@@ -620,43 +875,14 @@
     return out;
   }
 
-  function speak(text, btn, forLang) {
-    if (!text || !text.trim()) return;
-    if (!window.speechSynthesis) {
-      showToast(t("voice_unsupported"), "warning");
-      return;
-    }
-    if (activeReading && activeReading.btn === btn) {
-      window.speechSynthesis.cancel();
-      finishReading(btn);
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const chunks = chunkText(text);
-    if (!chunks.length) return;
+  function isActiveReading(btn, token) {
+    return !!(activeReading && activeReading.btn === btn && activeReading.token === token);
+  }
 
-    const origText = btn.dataset.origText || btn.textContent;
-    btn.dataset.origText = origText;
+  function prepareReading(btn) {
+    if (!btn.dataset.origText) btn.dataset.origText = btn.textContent.trim();
     btn.textContent = t("stop_reading");
     btn.classList.add("is-speaking");
-    const token = {};
-    activeReading = { btn, token };
-    const voice = pickVoice(forLang);
-    const langCode = ttsLangCode(forLang);
-    let i = 0;
-
-    const next = () => {
-      if (!activeReading || activeReading.btn !== btn || activeReading.token !== token) return;
-      if (i >= chunks.length) { finishReading(btn); return; }
-      const u = new SpeechSynthesisUtterance(chunks[i++]);
-      u.lang = langCode;
-      if (voice) u.voice = voice;
-      u.rate = 0.92;
-      u.onend  = next;
-      u.onerror = next;
-      try { window.speechSynthesis.speak(u); } catch (_) { next(); }
-    };
-    next();
   }
 
   function finishReading(btn) {
@@ -666,6 +892,95 @@
       btn.textContent = btn.dataset.origText;
       delete btn.dataset.origText;
     }
+  }
+
+  function stopReading() {
+    if (!activeReading) return;
+    const { btn, kind, audio } = activeReading;
+    activeReading = null; /* invalidate tokens before touching the engine */
+    if (kind === "web" && window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch (_) {}
+    }
+    if (kind === "server" && audio) {
+      audio.onended = audio.onerror = null;
+      try { audio.pause(); audio.removeAttribute("src"); } catch (_) {}
+    }
+    finishReading(btn);
+  }
+
+  function speak(text, btn, forLang) {
+    if (!text || !text.trim()) return;
+    /* Clicking the button while it is reading toggles to stop. */
+    if (activeReading && activeReading.btn === btn) { stopReading(); return; }
+    stopReading(); /* one reading at a time */
+    const trimmed = text.trim();
+    if (canUseWebSpeech(forLang)) speakWithWebSpeech(trimmed, btn, forLang);
+    else speakWithServer(trimmed, btn, forLang);
+  }
+
+  function speakWithWebSpeech(text, btn, forLang) {
+    const chunks = chunkText(text);
+    if (!chunks.length) return;
+    prepareReading(btn);
+    const token = {};
+    activeReading = { btn, token, kind: "web" };
+    const voice = pickVoice(forLang);
+    const langCode = ttsLangCode(forLang);
+    let i = 0;
+    let serverRetried = false;
+
+    const next = () => {
+      if (!isActiveReading(btn, token)) return;
+      if (i >= chunks.length) { finishReading(btn); return; }
+      const u = new SpeechSynthesisUtterance(chunks[i++]);
+      u.lang = langCode;
+      if (voice) u.voice = voice;
+      u.rate = 0.92;
+      u.onend = next;
+      u.onerror = () => {
+        /* synthesis-failed (stale or vanished voices) — retry the remaining
+           text once with the offline server engine instead of silently
+           skipping to the end. */
+        if (!serverRetried) {
+          serverRetried = true;
+          speakWithServer(chunks.slice(i - 1).join(" "), btn, forLang, true);
+          return;
+        }
+        next();
+      };
+      try { window.speechSynthesis.speak(u); } catch (_) { next(); }
+    };
+    next();
+  }
+
+  function speakWithServer(text, btn, forLang, alreadyPrepared) {
+    const target = forLang || lang;
+    const chunks = chunkText(text); /* ≤180 chars — safe to put in a URL */
+    if (!chunks.length) return;
+    if (!alreadyPrepared) prepareReading(btn);
+    const token = {};
+    const audio = new Audio();
+    activeReading = { btn, token, kind: "server", audio };
+    let i = 0;
+
+    const fail = () => {
+      if (!isActiveReading(btn, token)) return;
+      finishReading(btn);
+      showToast(t("tts_failed"), "warning");
+    };
+
+    const playNext = () => {
+      if (!isActiveReading(btn, token)) return;
+      if (i >= chunks.length) { finishReading(btn); return; }
+      audio.src = "/api/tts/?lang=" + encodeURIComponent(target) +
+                  "&text=" + encodeURIComponent(chunks[i++]);
+      const p = audio.play();
+      if (p && p.catch) p.catch(fail);
+    };
+
+    audio.onended = playNext;
+    audio.onerror = fail;
+    playNext();
   }
 
   /* ============================================================
@@ -880,6 +1195,7 @@
     initTextSize();
     initSearchBar();
     initAskBox();
+    initUnified();
     initChecklist();
     initAccordion();
     initStepToggles();

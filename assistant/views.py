@@ -2,15 +2,20 @@
 
 /api/ask/          — POST, returns full JSON (non-streaming fallback)
 /api/ask/stream/   — POST, returns text/event-stream SSE for streaming display
+/api/tts/          — GET, returns audio/wav synthesised offline with espeak-ng
 """
 
 import json
+import os
+import shutil
+import subprocess
+import tempfile
 from datetime import timedelta
 
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from services.models import Holiday, Service, WorkingDay
 
@@ -156,3 +161,54 @@ def ask_stream_view(request):
     # Allow the browser to read the stream from the same origin
     response["Access-Control-Allow-Origin"] = "*"
     return response
+
+
+# ── Text-to-speech fallback ───────────────────────────────────────────────────
+
+_TTS_MAX_CHARS = 2000
+
+
+@require_GET
+def tts_view(request):
+    """
+    GET /api/tts/?text=...&lang=en|ne  →  audio/wav
+
+    Offline read-aloud fallback for browsers whose speechSynthesis has no
+    voices (e.g. Brave ships without Google's cloud voices and this system
+    has no speech-dispatcher, so every utterance fails with
+    "synthesis-failed"). espeak-ng provides both English and Nepali locally,
+    so read-aloud works in any browser without network access.
+
+    The text is passed to espeak-ng as an argv element (never through a
+    shell), capped at _TTS_MAX_CHARS, with a hard 30s timeout.
+    """
+    text = (request.GET.get("text") or "").strip()[:_TTS_MAX_CHARS]
+    if not text:
+        return JsonResponse({"error": "empty text"}, status=400)
+    if shutil.which("espeak-ng") is None:
+        return JsonResponse({"error": "tts engine unavailable"}, status=501)
+
+    lang = request.GET.get("lang", "en")
+    voice = "ne" if lang == "ne" else "en-us"
+
+    fd, tmp_path = tempfile.mkstemp(suffix=".wav")
+    os.close(fd)
+    try:
+        subprocess.run(
+            ["espeak-ng", "-v", voice, "-s", "160", "-w", tmp_path, text],
+            check=True,
+            capture_output=True,
+            timeout=30,
+        )
+        with open(tmp_path, "rb") as fh:
+            audio = fh.read()
+        if len(audio) < 44:  # smaller than a bare WAV header → nothing spoken
+            return JsonResponse({"error": "synthesis failed"}, status=500)
+        return HttpResponse(audio, content_type="audio/wav")
+    except (subprocess.SubprocessError, OSError):
+        return JsonResponse({"error": "synthesis failed"}, status=500)
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass

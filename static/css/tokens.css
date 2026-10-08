@@ -1,65 +1,75 @@
 /* =============================================================
-   Sathi — Design tokens
+   Kagajpatra — Design tokens
+   Calming warm colour scheme for government document guidance.
    All colour, spacing, radius, shadow and type values live here.
    Use only these tokens in component CSS — no inline magic values.
    ============================================================= */
 
 :root {
-  /* ── Colour palette — light mode ── */
-  --color-bg:             #FBF7F1;
+  /* ── Colour palette — light mode (calming warm) ── */
+  --color-bg:             #FDF8F3;
   --color-surface:        #FFFFFF;
-  --color-surface-subtle: #F4EEE4;
-  --color-border:         #DDD5C8;
-  --color-border-strong:  #BFB5A7;
+  --color-surface-subtle: #F5F0E8;
+  --color-border:         #E8DFD4;
+  --color-border-strong:  #D4C9BC;
 
-  /* Primary — deep teal */
-  --color-primary:        #1F5F5B;
-  --color-primary-hover:  #174F4B;
-  --color-primary-soft:   #E6F2F1;
+  /* Primary — warm terracotta/clay */
+  --color-primary:        #B86B4A;
+  --color-primary-hover:  #A0583D;
+  --color-primary-soft:   #FBEDE5;
   --color-primary-text:   #FFFFFF;
 
-  /* Accent — warm terracotta, used sparingly */
-  --color-accent:         #C8553D;
-  --color-accent-hover:   #A8432D;
-  --color-accent-soft:    #FAEAE6;
+  /* Secondary — soft sage green */
+  --color-secondary:      #6B8E6B;
+  --color-secondary-hover: #5A7A5A;
+  --color-secondary-soft:  #EAF2EA;
+  --color-secondary-text:  #FFFFFF;
+
+  /* Accent — warm gold/amber */
+  --color-accent:         #C49A3C;
+  --color-accent-hover:   #A88230;
+  --color-accent-soft:    #FDF3E0;
   --color-accent-text:    #FFFFFF;
 
-  /* Text */
-  --color-text:           #1E1B16;
-  --color-text-secondary: #5B544A;
-  --color-text-disabled:  #9E9589;
+  /* Text — warm dark brown */
+  --color-text:           #2D2620;
+  --color-text-secondary: #6B5E52;
+  --color-text-disabled:  #A89D90;
   --color-text-inverse:   #FFFFFF;
 
   /* Semantic */
-  --color-success:        #2A6B3A;
-  --color-success-soft:   #E8F5EC;
-  --color-success-text:   #1A4726;
-  --color-warning:        #8C5A00;
-  --color-warning-soft:   #FEF3DC;
-  --color-warning-text:   #5C3A00;
-  --color-danger:         #B91C1C;
-  --color-danger-soft:    #FEE2E2;
-  --color-danger-text:    #7F1D1D;
+  --color-success:        #5A7A5A;
+  --color-success-soft:   #EAF2EA;
+  --color-success-text:   #3D5A3D;
+  --color-warning:        #B8860B;
+  --color-warning-soft:   #FDF6E3;
+  --color-warning-text:   #7D6608;
+  --color-danger:         #B85C4A;
+  --color-danger-soft:    #FBEDE5;
+  --color-danger-text:    #7A3D30;
 
-  /* ── Colour palette — dark mode (applied below) ── */
-  --color-bg-dark:             #141210;
-  --color-surface-dark:        #1E1B17;
-  --color-surface-subtle-dark: #272219;
-  --color-border-dark:         #3A342B;
-  --color-border-strong-dark:  #504840;
-  --color-primary-dark-mode:   #3D9E99;
-  --color-primary-hover-dark:  #52B8B3;
-  --color-primary-soft-dark:   #0D2E2C;
-  --color-accent-dark-mode:    #E07A62;
-  --color-accent-soft-dark:    #2E1710;
-  --color-text-dark:           #EDE8E0;
-  --color-text-secondary-dark: #9E9589;
-  --color-success-dark:        #5BBF74;
-  --color-success-soft-dark:   #0D2915;
-  --color-warning-dark:        #F0B429;
-  --color-warning-soft-dark:   #2A1E00;
-  --color-danger-dark:         #F87171;
-  --color-danger-soft-dark:    #2D0A0A;
+  /* ── Colour palette — dark mode ── */
+  --color-bg-dark:             #1A1613;
+  --color-surface-dark:        #231E1A;
+  --color-surface-subtle-dark: #2D2620;
+  --color-border-dark:         #3D342B;
+  --color-border-strong-dark:  #52483D;
+  --color-primary-dark-mode:   #D48A6B;
+  --color-primary-hover-dark:  #E09A7B;
+  --color-primary-soft-dark:   #3D2A20;
+  --color-secondary-dark-mode: #8AB88A;
+  --color-secondary-hover-dark:#9AC89A;
+  --color-secondary-soft-dark: #1E3D1E;
+  --color-accent-dark-mode:    #D4B85C;
+  --color-accent-soft-dark:    #3D341A;
+  --color-text-dark:           #E8E0D8;
+  --color-text-secondary-dark: #B8ADA0;
+  --color-success-dark:        #8AB88A;
+  --color-success-soft-dark:   #1E3D1E;
+  --color-warning-dark:        #E8D05C;
+  --color-warning-soft-dark:   #3D381A;
+  --color-danger-dark:         #E08A7A;
+  --color-danger-soft-dark:    #3D2A20;
 
   /* ── Active semantic aliases (components reference these) ── */
   --bg:             var(--color-bg);
@@ -72,6 +82,11 @@
   --primary-hover:  var(--color-primary-hover);
   --primary-soft:   var(--color-primary-soft);
   --primary-text:   var(--color-primary-text);
+
+  --secondary:      var(--color-secondary);
+  --secondary-hover: var(--color-secondary-hover);
+  --secondary-soft:  var(--color-secondary-soft);
+  --secondary-text:  var(--color-secondary-text);
 
   --accent:         var(--color-accent);
   --accent-hover:   var(--color-accent-hover);
@@ -170,27 +185,31 @@
     --primary:        var(--color-primary-dark-mode);
     --primary-hover:  var(--color-primary-hover-dark);
     --primary-soft:   var(--color-primary-soft-dark);
-    --primary-text:   #0D1F1E;
+    --primary-text:   #1A1613;
+    --secondary:      var(--color-secondary-dark-mode);
+    --secondary-hover: var(--color-secondary-hover-dark);
+    --secondary-soft:  var(--color-secondary-soft-dark);
+    --secondary-text:  #1A1613;
     --accent:         var(--color-accent-dark-mode);
-    --accent-hover:   #F09080;
+    --accent-hover:   #E8C870;
     --accent-soft:    var(--color-accent-soft-dark);
-    --accent-text:    #1A0800;
+    --accent-text:    #1A1613;
     --text:           var(--color-text-dark);
     --text-2:         var(--color-text-secondary-dark);
     --success:        var(--color-success-dark);
     --success-soft:   var(--color-success-soft-dark);
-    --success-text:   #A7F3BA;
+    --success-text:   #D4F5D4;
     --warning:        var(--color-warning-dark);
     --warning-soft:   var(--color-warning-soft-dark);
-    --warning-text:   #FDE68A;
+    --warning-text:   #F5E8A0;
     --danger:         var(--color-danger-dark);
     --danger-soft:    var(--color-danger-soft-dark);
-    --danger-text:    #FECACA;
+    --danger-text:    #F5D0C8;
     --shadow-xs: 0 1px 3px rgba(0,0,0,0.3);
     --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
     --shadow:    0 4px 16px rgba(0,0,0,0.4);
     --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
-    --focus-ring: 0 0 0 3px rgba(61,158,153,0.25), 0 0 0 5px var(--primary);
+    --focus-ring: 0 0 0 3px rgba(212,138,107,0.25), 0 0 0 5px var(--primary);
   }
 }
 
@@ -203,25 +222,29 @@
   --primary:        var(--color-primary-dark-mode);
   --primary-hover:  var(--color-primary-hover-dark);
   --primary-soft:   var(--color-primary-soft-dark);
-  --primary-text:   #0D1F1E;
+  --primary-text:   #1A1613;
+  --secondary:      var(--color-secondary-dark-mode);
+  --secondary-hover: var(--color-secondary-hover-dark);
+  --secondary-soft:  var(--color-secondary-soft-dark);
+  --secondary-text:  #1A1613;
   --accent:         var(--color-accent-dark-mode);
-  --accent-hover:   #F09080;
+  --accent-hover:   #E8C870;
   --accent-soft:    var(--color-accent-soft-dark);
-  --accent-text:    #1A0800;
+  --accent-text:    #1A1613;
   --text:           var(--color-text-dark);
   --text-2:         var(--color-text-secondary-dark);
   --success:        var(--color-success-dark);
   --success-soft:   var(--color-success-soft-dark);
-  --success-text:   #A7F3BA;
+  --success-text:   #D4F5D4;
   --warning:        var(--color-warning-dark);
   --warning-soft:   var(--color-warning-soft-dark);
-  --warning-text:   #FDE68A;
+  --warning-text:   #F5E8A0;
   --danger:         var(--color-danger-dark);
   --danger-soft:    var(--color-danger-soft-dark);
-  --danger-text:    #FECACA;
+  --danger-text:    #F5D0C8;
   --shadow-xs: 0 1px 3px rgba(0,0,0,0.3);
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
   --shadow:    0 4px 16px rgba(0,0,0,0.4);
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
-  --focus-ring: 0 0 0 3px rgba(61,158,153,0.25), 0 0 0 5px var(--primary);
+  --focus-ring: 0 0 0 3px rgba(212,138,107,0.25), 0 0 0 5px var(--primary);
 }
