@@ -15,6 +15,11 @@ def bl(obj, field: str, lang: str) -> str:
     return getattr(obj, f"{field}_{lang}", "") or getattr(obj, f"{field}_en", "")
 
 
+def bl(obj, field: str, lang: str) -> str:
+    """Pick the active-language value of a bilingual field."""
+    return getattr(obj, f"{field}_{lang}", "") or getattr(obj, f"{field}_en", "")
+
+
 def nepali_weekday(when: datetime) -> int:
     """WorkingDay.day is 0=Sunday .. 6=Saturday (Nepali convention);
     Python weekday() is 0=Monday .. 6=Sunday."""
@@ -120,3 +125,35 @@ def service_detail(request, slug):
         "all_services": Service.objects.all(),
     }
     return render(request, "service_detail.html", context)
+
+
+def my_checklist(request):
+    """Page showing all ticked checklist items across services (read from JS localStorage client-side)."""
+    lang = request.session.get("lang", "en")
+    strings = get_strings(lang)
+    services = Service.objects.filter(is_featured=True)
+    context = {
+        "services": [
+            {
+                "obj": s,
+                "slug": s.slug,
+                "name": bl(s, "name", lang),
+                "checklist": [
+                    {
+                        "id": item.id,
+                        "label": bl(item, "label", lang),
+                        "note": bl(item, "note", lang),
+                        "required": item.required,
+                    }
+                    for item in s.checklist.all()
+                ],
+            }
+            for s in services
+        ],
+    }
+    return render(request, "checklist_page.html", context)
+
+
+def about(request):
+    """About page: open-source, on-device AI, hackathon context."""
+    return render(request, "about.html", {})

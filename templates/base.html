@@ -1,50 +1,134 @@
 {% load static %}
 <!doctype html>
-<html lang="{{ lang }}">
+<html lang="{{ lang }}" data-theme="">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{{ t.app_name }}{% endblock %}</title>
+  <meta name="description" content="{{ t.app_tagline }}">
+  <title>{% block title %}{{ t.app_name }}{% endblock %} — {{ t.app_tagline }}</title>
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Design tokens + app styles -->
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+
+  <!-- Favicon: inline SVG as data URI -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231F5F5B'/%3E%3Cpath d='M8 10h10M8 16h16M8 22h12' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+
   {% block extra_head %}{% endblock %}
 </head>
-<body data-lang="{{ lang }}"{% block body_attrs %}{% endblock %}>
+<body data-lang="{{ lang }}" data-mode="simple">
+
+  <!-- Inject i18n strings for JavaScript -->
   {{ t|json_script:"ui-strings" }}
 
-  <header class="site-header">
-    <div class="container">
-      <a class="brand" href="{% url 'services:home' %}">
-        <span class="brand-mark">🏛</span>
-        <span>{{ t.app_name }}<small>{{ t.app_tagline }}</small></span>
+  <!-- Screen reader live region -->
+  <div id="sr-announce" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Skip to main content -->
+  <a class="skip-link" href="#main-content">{{ t.skip_to_content }}</a>
+
+  <!-- ── Header ── -->
+  <header class="site-header" role="banner">
+    <div class="container site-header__inner">
+
+      <!-- Wordmark -->
+      <a class="brand" href="{% url 'services:home' %}" aria-label="{{ t.app_name }} — {{ t.app_tagline }}">
+        <svg class="brand__mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="40" height="40" rx="10" fill="#1F5F5B"/>
+          <path d="M10 13h14M10 20h20M10 27h16" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="30" cy="13" r="3" fill="#C8553D"/>
+        </svg>
+        <span class="brand__name">
+          <span>{{ t.app_name }}</span>
+          <span class="brand__tagline">{{ t.app_tagline }}</span>
+        </span>
       </a>
-      <nav class="header-nav" aria-label="Main">
-        <a href="{% url 'services:home' %}#services">{{ t.nav_services }}</a>
-        <a href="{% url 'services:home' %}#hours">{{ t.nav_hours }}</a>
-        <a class="lang-toggle" href="{% url 'set_language' alt_lang %}">{{ t.lang_toggle }}</a>
+
+      <!-- Nav links (hidden on mobile) -->
+      <nav class="header-nav" aria-label="Main navigation">
+        <a class="header-nav__link" href="{% url 'services:home' %}">{{ t.nav_home }}</a>
+        <a class="header-nav__link" href="{% url 'services:home' %}#services">{{ t.nav_services }}</a>
+        <a class="header-nav__link" href="{% url 'services:home' %}#hours">{{ t.nav_hours }}</a>
+        <a class="header-nav__link" href="/checklist/">{{ t.nav_checklist }}</a>
+        <a class="header-nav__link" href="/about/">{{ t.nav_about }}</a>
       </nav>
+
+      <!-- Controls: mode, text size, language -->
+      <div class="header-controls">
+
+        <!-- Mode toggle -->
+        <div class="mode-toggle" role="group" aria-label="View mode">
+          <button class="mode-toggle__btn"
+                  data-mode-btn="simple"
+                  aria-pressed="true"
+                  title="{{ t.mode_simple }}">{{ t.mode_simple }}</button>
+          <button class="mode-toggle__btn"
+                  data-mode-btn="detailed"
+                  aria-pressed="false"
+                  title="{{ t.mode_detailed }}">{{ t.mode_detailed }}</button>
+        </div>
+
+        <!-- Text size -->
+        <div class="text-size-control" role="group" aria-label="{{ t.size_label }}">
+          <button class="text-size-control__btn"
+                  data-size-btn="normal"
+                  aria-pressed="true"
+                  aria-label="Normal text size">A</button>
+          <button class="text-size-control__btn"
+                  data-size-btn="large"
+                  aria-pressed="false"
+                  aria-label="Large text size">A+</button>
+          <button class="text-size-control__btn"
+                  data-size-btn="xlarge"
+                  aria-pressed="false"
+                  aria-label="Extra large text size">A++</button>
+        </div>
+
+        <!-- Language toggle -->
+        <a class="lang-toggle"
+           href="{% url 'set_language' alt_lang %}"
+           hreflang="{{ alt_lang }}"
+           aria-label="Switch language to {{ t.lang_toggle }}">{{ t.lang_toggle }}</a>
+
+      </div>
     </div>
   </header>
 
-  <main>
+  <!-- ── Main content ── -->
+  <main id="main-content" tabindex="-1">
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="site-footer">
+  <!-- ── Footer ── -->
+  <footer class="site-footer" role="contentinfo">
     <div class="container">
-      <div class="row">
-        <div><strong>{{ t.app_name }}</strong> — {{ t.app_tagline }}</div>
-        <div class="badge-stack">
-          <span class="tech-badge">Gemma 4 · Gemini API</span>
-          <span class="tech-badge">Ollama · local fallback</span>
-          <span class="tech-badge">Django</span>
+      <div class="site-footer__inner">
+        <div>
+          <div class="site-footer__brand">{{ t.app_name }}</div>
+          <div class="site-footer__tagline">{{ t.app_tagline }}</div>
+          <div class="site-footer__badges">
+            <span class="tech-badge">Gemma 4</span>
+            <span class="tech-badge">Ollama</span>
+            <span class="tech-badge">Django 6</span>
+            <span class="tech-badge">Offline-ready</span>
+          </div>
         </div>
+        <nav aria-label="Footer navigation">
+          <a class="header-nav__link" href="/about/">{{ t.nav_about }}</a>
+          <a class="header-nav__link" href="/checklist/">{{ t.nav_checklist }}</a>
+        </nav>
       </div>
-      <div class="demo-note">{{ t.demo_note }}</div>
+      <div class="site-footer__demo-note">{{ t.demo_note }}</div>
     </div>
   </footer>
+
+  <!-- Toast region -->
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
   <script src="{% static 'js/app.js' %}"></script>
 </body>

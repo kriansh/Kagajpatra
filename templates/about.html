@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ t.about_title }} · {{ t.app_name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header" role="region" aria-label="{{ t.about_title }}">
+  <div class="container">
+    <a class="page-header__back" href="{% url 'services:home' %}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m15 18-6-6 6-6"/>
+      </svg>
+      {{ t.back }}
+    </a>
+    <h1 class="page-header__title">{{ t.about_title }}</h1>
+    <p class="page-header__tagline">{{ t.app_tagline }}</p>
+  </div>
+</div>
+
+<section class="section detail-body" aria-labelledby="about-heading">
+  <div class="container" style="max-width: 800px;">
+
+    <!-- Wordmark + one-paragraph pitch -->
+    <div style="display: flex; align-items: center; gap: var(--space-5);
+                margin-bottom: var(--space-10);">
+      <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"
+           width="56" height="56" aria-hidden="true" style="flex-shrink:0;">
+        <rect width="56" height="56" rx="14" fill="#1F5F5B"/>
+        <path d="M14 18h20M14 28h28M14 38h22"
+              stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="42" cy="18" r="4" fill="#C8553D"/>
+      </svg>
+      <div>
+        <div style="font-size: var(--text-2xl); font-weight: var(--weight-bold);
+                    line-height: 1.2;">Sathi</div>
+        <div style="font-size: var(--text-sm); color: var(--text-2);">साथी</div>
+      </div>
+    </div>
+
+    <p style="font-size: var(--text-lg); line-height: var(--leading);
+              color: var(--text-2); max-width: 62ch; margin-bottom: var(--space-10);">
+      Sathi is a bilingual guide that tells you exactly which documents to bring,
+      which office to visit, and when it is open — for any Nepal government service.
+      It runs a small on-device AI model so your questions never leave your phone.
+    </p>
+
+    <!-- Feature cards -->
+    <div class="about-grid" aria-label="Key features">
+
+      <div class="about-feature">
+        <div class="about-feature__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div class="about-feature__title">{{ t.about_on_device }} AI</div>
+        <div class="about-feature__desc">
+          The assistant uses Gemma running locally via Ollama, or the Gemini API as
+          a fallback. Compact quantized models keep it fast and private — your
+          questions stay on your device.
+        </div>
+      </div>
+
+      <div class="about-feature">
+        <div class="about-feature__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="1" y1="1" x2="23" y2="23"/>
+            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+            <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+            <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
+            <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <line x1="12" y1="20" x2="12.01" y2="20"/>
+          </svg>
+        </div>
+        <div class="about-feature__title">{{ t.about_offline }}</div>
+        <div class="about-feature__desc">
+          Service worker caches all pages you have visited. Once loaded, Sathi
+          works fully without an internet connection — essential for areas with
+          poor connectivity.
+        </div>
+      </div>
+
+      <div class="about-feature">
+        <div class="about-feature__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+        </div>
+        <div class="about-feature__title">Voice search</div>
+        <div class="about-feature__desc">
+          Ask in Nepali or English using your microphone. The voice layer is built
+          as a clean adapter so a quantized Whisper model (via WebAssembly) can
+          replace it later without changing any UI code.
+        </div>
+      </div>
+
+      <div class="about-feature">
+        <div class="about-feature__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10
+                     15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </div>
+        <div class="about-feature__title">Bilingual</div>
+        <div class="about-feature__desc">
+          All content and UI are available in English and Nepali (नेपाली).
+          The language switch is always visible and remembered across sessions.
+        </div>
+      </div>
+
+      <div class="about-feature">
+        <div class="about-feature__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+        </div>
+        <div class="about-feature__title">Document checklists</div>
+        <div class="about-feature__desc">
+          Every service has a tappable checklist. Tick items as you prepare.
+          Your progress is saved on-device and restored when you return.
+          You can copy, share, or print the list.
+        </div>
+      </div>
+
+      <div class="about-feature">
+        <div class="about-feature__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61
+                     c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77
+                     5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0
+                     0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5
+                     4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44
+                     7A3.37 3.37 0 0 0 9 18.13V22"/>
+          </svg>
+        </div>
+        <div class="about-feature__title">{{ t.about_open_source }}</div>
+        <div class="about-feature__desc">
+          Built for the open-source hackathon on tiny, edge-ready, on-device AI.
+          Django 6 backend, plain CSS design tokens, no CDN runtime dependencies.
+          <br><br>
+          <a href="https://github.com/" style="font-weight: var(--weight-semibold);">
+            View on GitHub
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                 style="display:inline; vertical-align:middle; margin-left:4px;" aria-hidden="true">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+    </div><!-- /about-grid -->
+
+    <!-- Tech stack -->
+    <div class="card card--inset" style="margin-top: var(--space-10);">
+      <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold);
+                 margin-bottom: var(--space-4);">Stack</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                  gap: var(--space-4);">
+        <div>
+          <div style="font-weight: var(--weight-semibold); margin-bottom: var(--space-1);">Backend</div>
+          <div style="color: var(--text-2); font-size: var(--text-sm);">Django 6.1, SQLite, Python 3.14</div>
+        </div>
+        <div>
+          <div style="font-weight: var(--weight-semibold); margin-bottom: var(--space-1);">AI</div>
+          <div style="color: var(--text-2); font-size: var(--text-sm);">Gemma 4 via Gemini API · Ollama local fallback</div>
+        </div>
+        <div>
+          <div style="font-weight: var(--weight-semibold); margin-bottom: var(--space-1);">Frontend</div>
+          <div style="color: var(--text-2); font-size: var(--text-sm);">Plain HTML, CSS tokens, vanilla JS — no framework</div>
+        </div>
+        <div>
+          <div style="font-weight: var(--weight-semibold); margin-bottom: var(--space-1);">Fonts</div>
+          <div style="color: var(--text-2); font-size: var(--text-sm);">Inter · Noto Sans Devanagari</div>
+        </div>
+        <div>
+          <div style="font-weight: var(--weight-semibold); margin-bottom: var(--space-1);">Voice</div>
+          <div style="color: var(--text-2); font-size: var(--text-sm);">Web Speech API · adapter interface for Whisper/WASM</div>
+        </div>
+        <div>
+          <div style="font-weight: var(--weight-semibold); margin-bottom: var(--space-1);">Offline</div>
+          <div style="color: var(--text-2); font-size: var(--text-sm);">Service worker, cache-first static assets</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content accuracy note -->
+    <div class="tip-box" style="margin-top: var(--space-8);">
+      <div class="tip-box__title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+        </svg>
+        Content accuracy
+      </div>
+      <p class="tip-box__text">
+        All service content is in <code>services/management/commands/seed_demo.py</code>
+        and is backed by <code>docs/content-research.md</code> (official FAQs, gazette
+        references, DAO lists). Office hours follow the Cabinet decision of
+        6 Apr 2026 (Rajpatra ref 26253): Mon–Fri 9 AM–5 PM, Sat+Sun weekly holidays.
+        Always confirm with the office before you travel.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}

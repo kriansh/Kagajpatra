@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ t.my_checklist }} · {{ t.app_name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header" role="region" aria-label="{{ t.my_checklist }}">
+  <div class="container">
+    <a class="page-header__back" href="{% url 'services:home' %}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m15 18-6-6 6-6"/>
+      </svg>
+      {{ t.back }}
+    </a>
+    <h1 class="page-header__title">{{ t.my_checklist }}</h1>
+    <p class="page-header__tagline">{{ t.checklist_page_sub }}</p>
+  </div>
+</div>
+
+<section class="section detail-body" aria-labelledby="checklist-page-heading">
+  <div class="container" style="max-width: 720px;">
+
+    <!-- Explanation: state is in localStorage, rendered client-side -->
+    <div class="tip-box" style="margin-bottom: var(--space-8);" role="note">
+      <div class="tip-box__title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+        </svg>
+        {{ t.tips }}
+      </div>
+      <p class="tip-box__text">
+        Your ticked items are saved on this device only. They persist between visits as long as you use the same browser.
+      </p>
+    </div>
+
+    <!-- Rendered by JS from localStorage — show skeleton while loading -->
+    <div id="checklist-page-body">
+
+      {% for svc in services %}
+      <div class="checklist-page-service" data-service-slug="{{ svc.slug }}">
+        <div class="checklist-page-service__header">
+          <h2 class="checklist-page-service__name">
+            <a href="{% url 'services:service_detail' svc.slug %}"
+               style="color: var(--text); text-decoration: none;">
+              {{ svc.name }}
+            </a>
+          </h2>
+          <span class="chip chip--neutral"
+                id="progress-chip-{{ svc.slug }}"
+                aria-live="polite">
+            0 / {{ svc.checklist|length }} {{ t.progress }}
+          </span>
+        </div>
+
+        <ul class="check-list">
+          {% for item in svc.checklist %}
+          <li class="check-item"
+              data-id="{{ item.id }}"
+              role="checkbox"
+              aria-checked="false"
+              tabindex="0"
+              aria-label="{{ item.label }}">
+            <span class="check-item__box" aria-hidden="true">
+              <svg class="check-item__check" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="3"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </span>
+            <span class="check-item__body">
+              <span class="check-item__label">{{ item.label }}</span>
+              {% if item.note %}
+              <span class="check-item__note">{{ item.note }}</span>
+              {% endif %}
+            </span>
+            <span class="check-item__tag">
+              <span class="chip {% if item.required %}chip--primary{% else %}chip--neutral{% endif %}">
+                {% if item.required %}{{ t.required }}{% else %}{{ t.optional }}{% endif %}
+              </span>
+            </span>
+          </li>
+          {% empty %}
+          <li style="color: var(--text-2); padding: var(--space-4);">—</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% empty %}
+      <!-- Empty state illustration -->
+      <div style="text-align: center; padding: var(--space-16) 0;">
+        <svg width="80" height="80" viewBox="0 0 80 80" fill="none"
+             style="margin: 0 auto var(--space-6);" aria-hidden="true">
+          <circle cx="40" cy="40" r="38" fill="var(--surface-subtle)"
+                  stroke="var(--border)" stroke-width="2"/>
+          <rect x="24" y="26" width="32" height="28" rx="3"
+                fill="none" stroke="var(--border-strong)" stroke-width="2"/>
+          <path d="M30 36h20M30 42h14" stroke="var(--border-strong)"
+                stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p style="font-size: var(--text-lg); font-weight: var(--weight-semibold);
+                  margin-bottom: var(--space-3);">{{ t.checklist_empty }}</p>
+        <a href="{% url 'services:home' %}#services" class="btn btn--primary">
+          {{ t.nav_services }}
+        </a>
+      </div>
+      {% endfor %}
+
+    </div><!-- /checklist-page-body -->
+
+  </div>
+</section>
+
+<script>
+/* Restore checked state per-service from localStorage */
+(function () {
+  document.querySelectorAll(".checklist-page-service").forEach(function (svcEl) {
+    var slug = svcEl.dataset.serviceSlug;
+    var key  = "sathi:checklist:" + slug;
+    var saved = {};
+    try { saved = JSON.parse(localStorage.getItem(key) || "{}"); } catch (_) {}
+
+    var items = svcEl.querySelectorAll(".check-item");
+    var done  = 0;
+    items.forEach(function (item) {
+      if (saved[item.dataset.id]) {
+        item.classList.add("is-checked");
+        item.setAttribute("aria-checked", "true");
+        done++;
+      }
+    });
+
+    var chip = document.getElementById("progress-chip-" + slug);
+    if (chip) {
+      chip.textContent = done + " / " + items.length + " {{ t.progress }}";
+      if (done > 0) chip.className = "chip chip--success";
+    }
+  });
+})();
+</script>
+
+{% endblock %}

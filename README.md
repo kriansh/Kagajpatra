@@ -1,4 +1,4 @@
-# Nagarik Sewa (नागरिक सेवा)
+# Sathi (साथी)
 
 Bilingual (English / नेपाली) guide to Nepali government services — build for a
 1-day hackathon. Big, accessible UI; voice input (mic) and read-aloud; AI
@@ -67,3 +67,60 @@ figures are intentionally vague ("amount set locally"). Notably:
 
 - Voice input needs a browser with Web Speech API (Chrome/Edge).
 - .gitignore excludes `.env`, `db.sqlite3`, `.venv`, `staticfiles`.
+
+---
+
+## Design system
+
+All visual values are defined as CSS custom properties in `static/css/tokens.css`.
+Components import only these tokens — no inline magic values anywhere.
+
+### Token categories
+
+| Category | File location | Example token |
+|---|---|---|
+| Colour palette | `tokens.css` | `--color-primary: #1F5F5B` |
+| Semantic aliases | `tokens.css` | `--primary`, `--text`, `--border` |
+| Typography | `tokens.css` | `--text-base: 1.125rem`, `--font-ui` |
+| Spacing (8px grid) | `tokens.css` | `--space-4: 1rem` |
+| Radii | `tokens.css` | `--radius: 0.75rem` |
+| Shadows | `tokens.css` | `--shadow-sm` |
+| Motion | `tokens.css` | `--duration: 160ms`, `--ease` |
+
+Dark mode is automatic via `prefers-color-scheme` and can be forced with
+`data-theme="dark"` on the `<html>` element.
+
+### Components
+
+| Component | CSS class | Notes |
+|---|---|---|
+| Button | `.btn`, `.btn--primary`, `.btn--secondary`, `.btn--ghost` | 52px min-height |
+| Card | `.card`, `.card--interactive`, `.card--inset` | |
+| Chip/Badge | `.chip`, `.chip--primary`, `.chip--success`, etc. | |
+| Checklist item | `.check-item` | Accessible `role=checkbox` |
+| Accordion | `.accordion`, `.accordion__trigger` | JS-animated max-height |
+| Steps | `.steps-list`, `.step` | Connected with CSS line |
+| Search bar | `.search-wrap` | Includes mic + submit |
+| Voice button | `.voice-btn` | 7 states, aria-live |
+| Toast | `.toast`, `window.sathiToast(msg, type)` | 6s auto-dismiss |
+| Before-you-go card | `.byg-card`, `.byg-grid` | Summary row on detail page |
+| Skeleton | `.skeleton`, `.skeleton--text`, `.skeleton--card` | |
+
+### View modes
+
+- **Simple** (default): 20px+ body text, one column, big touch targets.
+- **Detailed**: two-column layout, breadcrumbs, all fields at once.
+
+Toggle is in the header. The choice is saved in `localStorage`.
+
+### Text size
+
+Three levels: normal / A+ / A++ (1×, 1.15×, 1.30× scale via `--ts-scale`).
+Applied as `data-text-size` on `<html>`. Saved in `localStorage`.
+
+### Contributing design
+
+1. Add new tokens to `tokens.css` only — never hardcode colours/spacing elsewhere.
+2. Test any new component at `--text-size: xlarge` and in dark mode.
+3. Every interactive element needs a `min-height: 48px` touch target and a visible `:focus-visible` ring.
+4. Add a string to both `en` and `ne` sections of `nagarik/i18n.py` before using it in a template.

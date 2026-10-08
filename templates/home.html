@@ -1,105 +1,309 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ t.app_name }}{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <div class="container">
-    <h1>{{ t.app_tagline }}</h1>
-    <p class="tagline">{{ t.services_sub }}</p>
-    <span class="status-pill is-{{ status.state }}">
-      <span class="dot"></span>{{ t.today }}, {{ today_name }}: {{ status.label }}
-    </span>
+
+<!-- ── Hero ── -->
+<section class="hero" aria-labelledby="hero-title">
+  <div class="container hero__inner">
+
+    <p class="hero__greeting">{{ t.app_name }}</p>
+
+    <h1 class="hero__title" id="hero-title">{{ t.app_tagline }}</h1>
+
+    <p class="hero__sub">{{ t.services_sub }}</p>
+
+    <!-- Status chip -->
+    <div class="hero__status">
+      {% if status.state == "open_now" or status.state == "half_day" %}
+        <span class="chip chip--success">
+          <span class="chip__dot"></span>
+          {{ t.today }}, {{ today_name }}: {{ status.label }}
+        </span>
+      {% else %}
+        <span class="chip chip--danger">
+          <span class="chip__dot"></span>
+          {{ t.today }}, {{ today_name }}: {{ status.label }}
+        </span>
+      {% endif %}
+    </div>
+
   </div>
 </section>
 
-{% include "partials/ask.html" %}
+<!-- ── Search bar ── -->
+<section class="section" aria-label="Search">
+  <div class="container" style="max-width: 720px;">
 
-<section class="section" id="services">
+    <form id="search-form" action="{% url 'services:home' %}" method="get" role="search" aria-label="{{ t.search_placeholder }}" autocomplete="off">
+      <div style="position: relative;">
+        <div class="search-wrap" role="search">
+
+          <!-- Search icon -->
+          <span class="search-wrap__icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
+          </span>
+
+          <input
+            id="search-input"
+            name="q"
+            type="search"
+            class="search-wrap__input"
+            placeholder="{{ t.search_placeholder }}"
+            aria-label="{{ t.search_placeholder }}"
+            autocomplete="off"
+            spellcheck="false"
+            value="{{ request.GET.q|default:'' }}">
+
+          <!-- Mic button -->
+          <button
+            type="button"
+            class="voice-btn"
+            id="search-mic-btn"
+            data-voice="search"
+            data-status-target="search-voice-status"
+            data-transcript-target="search-transcript"
+            aria-label="{{ t.mic_hint }}"
+            data-state="idle">
+            <span aria-hidden="true">
+              <!-- Mic icon or waveform (JS swaps) -->
+              <svg class="voice-btn__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" x2="12" y1="19" y2="22"/>
+              </svg>
+              <span class="voice-waveform" style="display:none" aria-hidden="true">
+                <span class="voice-waveform__bar"></span>
+                <span class="voice-waveform__bar"></span>
+                <span class="voice-waveform__bar"></span>
+                <span class="voice-waveform__bar"></span>
+                <span class="voice-waveform__bar"></span>
+              </span>
+            </span>
+            <span class="voice-btn__label">{{ t.mic_label }}</span>
+          </button>
+
+          <button type="submit" class="search-wrap__submit" aria-label="{{ t.search }}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m9 18 6-6-6-6"/>
+            </svg>
+            <span>{{ t.search }}</span>
+          </button>
+
+        </div>
+
+        <!-- Instant search results dropdown -->
+        <div id="search-results" hidden role="listbox" aria-label="{{ t.search_placeholder }}"
+             style="position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:200;
+                    background:var(--surface);border:1px solid var(--border);
+                    border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);overflow:hidden;">
+        </div>
+      </div>
+
+      <!-- Voice status + transcript -->
+      <div class="voice-status" id="search-voice-status" role="status" aria-live="polite" style="margin-top: var(--space-3);"></div>
+      <div class="voice-transcript" id="search-transcript" aria-live="polite"></div>
+
+    </form>
+
+    <p style="margin-top: var(--space-3); font-size: var(--text-sm); color: var(--text-2);">
+      {{ t.search_example }}
+    </p>
+
+    <!-- Hidden service data for client-side search -->
+    {% for item in services %}
+    <a class="visually-hidden"
+       href="{% url 'services:service_detail' item.slug %}"
+       data-service-name="{{ item.name }}"
+       data-service-tagline="{{ item.tagline }}"
+       data-service-tags="{{ item.name }} {{ item.tagline }}"
+       data-service-icon-html=""
+       aria-hidden="true"
+       tabindex="-1">{{ item.name }}</a>
+    {% endfor %}
+
+  </div>
+</section>
+
+<!-- ── Service tiles ── -->
+<section class="section section--alt" id="services" aria-labelledby="services-heading">
   <div class="container">
-    <h2 class="section-title">🧾 {{ t.services_heading }}</h2>
-    <p class="section-sub">{{ t.services_sub }}</p>
-    <div class="card-grid">
+    <div class="section__header">
+      <h2 class="section__title" id="services-heading">
+        <!-- Grid icon -->
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        {{ t.services_heading }}
+      </h2>
+      <p class="section__sub">{{ t.services_sub }}</p>
+    </div>
+
+    <div class="category-grid" role="list">
       {% for item in services %}
-      <a class="service-card" href="{% url 'services:service_detail' item.slug %}">
-        <span class="icon">{{ item.icon }}</span>
-        <h3>{{ item.name }}</h3>
-        <p>{{ item.tagline }}</p>
-        <span class="card-chip">✓ {{ item.count }} {{ t.checklist_count }}</span>
+      <a class="service-tile"
+         href="{% url 'services:service_detail' item.slug %}"
+         role="listitem"
+         data-service-name="{{ item.name }}"
+         data-service-tagline="{{ item.tagline }}"
+         data-service-tags="{{ item.name }} {{ item.tagline }}"
+         data-href="{% url 'services:service_detail' item.slug %}">
+
+        <!-- Service icon: generic document icon for all, customisable per service -->
+        <span class="service-tile__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </span>
+
+        <span class="service-tile__name">{{ item.name }}</span>
+        <span class="service-tile__tagline">{{ item.tagline }}</span>
+        <span class="service-tile__meta">
+          {{ item.count }} {{ t.checklist_count }}
+          <!-- Chevron -->
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: auto;"><path d="m9 18 6-6-6-6"/></svg>
+        </span>
+
       </a>
       {% empty %}
-      <p>—</p>
+      <!-- Empty state -->
+      <div style="grid-column: 1 / -1; text-align: center; padding: var(--space-16);">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" style="margin: 0 auto var(--space-4);" aria-hidden="true">
+          <circle cx="32" cy="32" r="30" fill="var(--surface-subtle)" stroke="var(--border)" stroke-width="2"/>
+          <path d="M22 24h20M22 32h20M22 40h12" stroke="var(--border-strong)" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <p style="color: var(--text-2);">No services loaded. Run <code>python manage.py seed_demo</code></p>
+      </div>
       {% endfor %}
     </div>
   </div>
 </section>
 
-<section class="section alt" id="hours">
+<!-- ── AI ask ── -->
+{% include "partials/ask.html" %}
+
+<!-- ── Office hours ── -->
+<section class="section section--alt" id="hours" aria-labelledby="hours-heading">
   <div class="container">
-    <h2 class="section-title">🕘 {{ t.office_hours }}</h2>
-    <p class="section-sub">{{ t.hours_sub }}</p>
-    <table class="hours-table">
+    <div class="section__header">
+      <h2 class="section__title" id="hours-heading">
+        <!-- Clock icon -->
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        {{ t.office_hours }}
+      </h2>
+      <p class="section__sub">{{ t.hours_sub }}</p>
+    </div>
+
+    <table class="hours-table" aria-label="{{ t.office_hours }}">
       <thead>
         <tr>
-          <th scope="col">{{ t.nav_hours }}</th>
+          <th scope="col">Day</th>
           <th scope="col">{{ t.office_hours }}</th>
+          <th scope="col">Note</th>
         </tr>
       </thead>
       <tbody>
         {% for wd in working_days %}
-        <tr{% if forloop.counter0 == today_index %} class="today"{% endif %}>
+        <tr{% if forloop.counter0 == today_index %} class="is-today"{% endif %}>
           <td>
             {{ wd.name }}
-            {% if forloop.counter0 == today_index %}<span class="today-badge">{{ t.today }}</span>{% endif %}
+            {% if forloop.counter0 == today_index %}
+              <span class="today-badge">{{ t.today }}</span>
+            {% endif %}
           </td>
           <td>
             {% if wd.wd.is_closed %}
-              <span class="closed-text">{{ t.closed }}</span>
+              <span class="hours-closed">{{ t.closed }}</span>
             {% else %}
               {{ wd.hours }}
-              {% if wd.wd.is_half_day %}<span class="half-text">· {{ t.half_day }}</span>{% endif %}
+              {% if wd.wd.is_half_day %}
+                <span class="hours-half">&nbsp;· {{ t.half_day }}</span>
+              {% endif %}
             {% endif %}
           </td>
+          <td style="color: var(--text-2); font-size: var(--text-sm);">{{ wd.note }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="2">—</td></tr>
+        <tr><td colspan="3" style="padding: var(--space-8); text-align: center; color: var(--text-2);">—</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </section>
 
-<section class="section" id="holidays">
+<!-- ── Public holidays ── -->
+<section class="section" id="holidays" aria-labelledby="holidays-heading">
   <div class="container">
-    <h2 class="section-title">🎉 {{ t.holidays_heading }}</h2>
-    <p class="section-sub">{{ t.holidays_sub }}</p>
-    <ul class="holiday-list">
+    <div class="section__header">
+      <h2 class="section__title" id="holidays-heading">
+        <!-- Calendar icon -->
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        {{ t.holidays_heading }}
+      </h2>
+      <p class="section__sub">{{ t.holidays_sub }}</p>
+    </div>
+
+    <ul class="holiday-list" aria-label="{{ t.holidays_heading }}">
       {% for item in holidays %}
-      <li class="holiday">
-        <span class="date-box">
-          <strong>{{ item.h.date|date:"d" }}</strong>
-          <span>{{ item.h.date|date:"M" }}</span>
+      <li class="holiday-item">
+        <div class="holiday-item__date" aria-hidden="true">
+          <span class="holiday-item__date-day">{{ item.h.date|date:"d" }}</span>
+          <span class="holiday-item__date-mon">{{ item.h.date|date:"M" }}</span>
+        </div>
+        <span class="holiday-item__name">
+          {% if lang == "ne" %}{{ item.h.name_ne }}{% else %}{{ item.h.name_en }}{% endif %}
         </span>
-        <span class="name">{{ item.h.name_en }}{% if lang == "ne" %} / {{ item.h.name_ne }}{% endif %}</span>
-        <span class="rel">
-          {% if item.days == 0 %}{{ t.today }}{% else %}{{ item.days }} {{ t.days_word }}{% endif %}
+        <span class="holiday-item__rel">
+          {% if item.days == 0 %}
+            <span class="chip chip--warning">{{ t.today }}</span>
+          {% elif item.days == 1 %}
+            <span class="chip chip--neutral">Tomorrow</span>
+          {% else %}
+            <span style="color: var(--text-2); font-size: var(--text-xs);">{{ item.days }} {{ t.days_word }}</span>
+          {% endif %}
         </span>
       </li>
       {% empty %}
-      <li class="holiday">—</li>
+      <li style="padding: var(--space-8); text-align: center; color: var(--text-2);">—</li>
       {% endfor %}
     </ul>
   </div>
 </section>
 
+<!-- ── Site info ── -->
 {% if site_info %}
-<section class="section alt" id="info">
+<section class="section section--alt" id="info">
   <div class="container">
-    <div class="info-grid">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-4);">
       {% for item in site_info %}
-      <div class="info-card">
-        <span class="i">{{ item.i.icon }}</span>
+      <div class="card card--inset" style="display: flex; gap: var(--space-4); align-items: flex-start;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0; color: var(--primary); margin-top: 2px;">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4M12 8h.01"/>
+        </svg>
         <div>
-          <strong>{{ item.label }}</strong>
-          <span>{{ item.value }}</span>
+          <div style="font-weight: var(--weight-semibold); font-size: var(--text-base);">{{ item.label }}</div>
+          <div style="color: var(--text-2); font-size: var(--text-sm);">{{ item.value }}</div>
         </div>
       </div>
       {% endfor %}
@@ -107,4 +311,25 @@
   </div>
 </section>
 {% endif %}
+
+<!-- ── Mobile bottom action bar ── -->
+<div class="mobile-action-bar" aria-hidden="true">
+  <a href="{% url 'services:home' %}#services" class="btn btn--ghost" style="flex:1;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    {{ t.nav_services }}
+  </a>
+  <a href="/checklist/" class="btn btn--ghost" style="flex:1;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+    </svg>
+    {{ t.nav_checklist }}
+  </a>
+</div>
+
+<!-- Spacer for mobile bottom bar -->
+<div class="mobile-spacer" style="height: 80px;" aria-hidden="true"></div>
+
 {% endblock %}
