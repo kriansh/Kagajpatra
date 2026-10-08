@@ -1,0 +1,69 @@
+# Nagarik Sewa (नागरिक सेवा)
+
+Bilingual (English / नेपाली) guide to Nepali government services — build for a
+1-day hackathon. Big, accessible UI; voice input (mic) and read-aloud; AI
+assistant (Gemma) grounded in the app's research-backed content; works fully
+offline once the static assets are loaded.
+
+## Demo services
+
+1. **Birth certificate** (जन्म दर्ता) — ward office, 35-day free window
+2. **House & property tax** (घर कर) — slab rates, discount/penalty windows
+3. **Citizenship certificate** (नागरिकता) — DAO + ward recommendation
+4. **Marriage registration** (विवाह दर्ता) — ward route or court marriage
+
+## Stack
+
+- **Django 6** backend, `services` + `assistant` apps
+- Plain Django templates + hand-rolled CSS (no CDN runtime deps)
+- Web Speech API: voice input (`ne-NP`/`en-US`) + speechSynthesis read-aloud
+- AI: **Gemma via Gemini API**, automatic fallback to **local Ollama**
+
+## Run it
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# .env   (see .env.example)
+GEMINI_API_KEY=...          # optional — local Ollama works without it
+GEMINI_MODEL=gemma-3-27b-it # any model your project can access
+OLLAMA_URL=http://localhost:11434
+
+python manage.py migrate
+python manage.py seed_demo     # loads the 4 services, hours, holidays
+python manage.py runserver
+```
+
+Open http://127.0.0.1:8000/ and use the **नेपाली / English** toggle.
+
+## AI assistant
+
+The ask box (`/api/ask/`) builds a grounding prompt from the seeded database,
+then:
+
+1. tries **Gemini API** (`GEMINI_MODEL`, key from `.env`);
+2. on any failure falls back to **Ollama** (`gemma4:e2b` → `gemma4:e4b` →
+   `glm4:9b` → `qwen3.5:9b`, first one installed).
+
+Tested: with the Gemini project denied, the app answer came from local
+`glm4:9b`, in the active UI language, listing the correct grounded checklist.
+
+## Content accuracy
+
+All content lives in `services/management/commands/seed_demo.py` and is backed by
+`docs/content-research.md` (official FAQs, gazette refs, DAO lists). Unverified
+figures are intentionally vague ("amount set locally"). Notably:
+
+- **Office hours** follow the Cabinet decision of **6 Apr 2026** (Rajpatra
+  ref 26253): Mon–Fri **9 AM–5 PM**, **Sat + Sun** weekly holidays, lunch
+  1:30–2:00 PM, winter hours 9 AM–4 PM from 2 Nov 2026. The old Friday
+  half-day (10 AM–3 PM) ended 5 Apr 2026.
+- **Holidays** come from the Nepal Rajpatra 2083 notice (ref 26242): Dashain
+  block 17–23 Oct (Tika 21 Oct), Tihar 8–12 Nov (Bhai Tika 11 Nov), Chhath
+  15 Nov, etc.
+
+## Notes for the demo
+
+- Voice input needs a browser with Web Speech API (Chrome/Edge).
+- .gitignore excludes `.env`, `db.sqlite3`, `.venv`, `staticfiles`.

@@ -1,0 +1,27 @@
+<section class="section" id="ask" aria-label="{{ t.ask_heading }}">
+  <div class="container">
+    <div class="ask-card">
+      <h2>🤖 {{ t.ask_heading }}</h2>
+      <p class="hint">🎤 {{ t.mic_hint }}</p>
+      <form id="ask-form" action="{% url 'assistant:ask' %}" method="post">
+        {% csrf_token %}
+        <div class="ask-row">
+          <textarea id="ask-input" name="question" rows="2"
+                    placeholder="{{ t.ask_placeholder }}"
+                    aria-label="{{ t.ask_heading }}"></textarea>
+          <button type="button" class="btn btn-mic" id="mic-btn" title="{{ t.mic_hint }}" aria-label="{{ t.mic_hint }}">🎙</button>
+          <button type="submit" class="btn btn-primary">{{ t.send }}</button>
+        </div>
+      </form>
+      <div class="ask-status" id="ask-status" role="status" aria-live="polite"></div>
+      <div class="answer-card hidden" id="answer-card">
+        <div class="answer-text" id="answer-text"></div>
+        <div class="answer-meta">
+          <span>{{ t.answer_from }}:</span>
+          <span class="provider-badge" id="provider-badge">Gemma</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="read-answer">🔊 {{ t.read_aloud }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

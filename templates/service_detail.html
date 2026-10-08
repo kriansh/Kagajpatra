@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ sv.name }} · {{ t.app_name }}{% endblock %}
+{% block body_attrs %} data-service-slug="{{ slug }}"{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div class="container">
+    <a class="back-link" href="{% url 'services:home' %}">← {{ t.back }}</a>
+    <h1>{{ icon }} {{ sv.name }}</h1>
+    <p class="sub">{{ sv.tagline }}</p>
+    <div class="action-row">
+      <button type="button" class="btn btn-ghost" data-read-selector=".detail-body">🔊 {{ t.read_page }}</button>
+      <button type="button" class="btn btn-ghost" data-ask-prefill="{{ ask_prefill }}">🤖 {{ t.ask_heading }}</button>
+    </div>
+  </div>
+</div>
+
+<section class="section detail-body">
+  <div class="container">
+    {% if sv.overview %}
+    <p class="lead">{{ sv.overview }}</p>
+    {% endif %}
+
+    <div class="chip-row">
+      {% if sv.office %}
+      <span class="chip"><span class="chip-label">📍 {{ t.office }}</span><span class="chip-value">{{ sv.office }}</span></span>
+      {% endif %}
+      {% if sv.fee %}
+      <span class="chip"><span class="chip-label">💰 {{ t.fee }}</span><span class="chip-value">{{ sv.fee }}</span></span>
+      {% endif %}
+      {% if sv.timeline %}
+      <span class="chip"><span class="chip-label">⏱ {{ t.timeline }}</span><span class="chip-value">{{ sv.timeline }}</span></span>
+      {% endif %}
+      {% if sv.deadline %}
+      <span class="chip"><span class="chip-label">📅 {{ t.deadline }}</span><span class="chip-value">{{ sv.deadline }}</span></span>
+      {% endif %}
+    </div>
+
+    <div class="detail-grid mt-2">
+      <div>
+        <h2 class="section-title">📋 {{ t.checklist_heading }}</h2>
+        <p class="section-sub">{{ t.checklist_sub }} · <strong id="check-progress">0 / 0</strong></p>
+        {% for group, items in checklist_groups %}
+        <div class="check-group">
+          <h3>{{ group }}</h3>
+          <ul class="check-list">
+            {% for item in items %}
+            <li class="check-item" data-id="{{ item.id }}" role="checkbox" aria-checked="false" tabindex="0">
+              <span class="box">✓</span>
+              <span class="label">
+                {{ item.label }}
+                {% if item.note %}<span class="note">{{ item.note }}</span>{% endif %}
+              </span>
+              <span class="tag-required {% if not item.required %}tag-optional{% endif %}">
+                {% if item.required %}{{ t.required }}{% else %}{{ t.optional }}{% endif %}
+              </span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% empty %}
+        <p>—</p>
+        {% endfor %}
+      </div>
+
+      <div>
+        <h2 class="section-title">🪜 {{ t.steps_heading }}</h2>
+        <p class="section-sub">{{ t.office }}: {{ sv.office }}</p>
+        <ol class="steps">
+          {% for step in steps %}
+          <li class="step">
+            <span class="num">{{ forloop.counter }}</span>
+            <div>
+              <h4>{{ step.title }}</h4>
+              {% if step.detail %}<p>{{ step.detail }}</p>{% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+        {% if sv.tips %}
+        <div class="tip-box">
+          <h3>💡 {{ t.tips }}</h3>
+          <p>{{ sv.tips }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% include "partials/ask.html" %}
+{% endblock %}

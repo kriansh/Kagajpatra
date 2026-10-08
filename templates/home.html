@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <h1>{{ t.app_tagline }}</h1>
+    <p class="tagline">{{ t.services_sub }}</p>
+    <span class="status-pill is-{{ status.state }}">
+      <span class="dot"></span>{{ t.today }}, {{ today_name }}: {{ status.label }}
+    </span>
+  </div>
+</section>
+
+{% include "partials/ask.html" %}
+
+<section class="section" id="services">
+  <div class="container">
+    <h2 class="section-title">🧾 {{ t.services_heading }}</h2>
+    <p class="section-sub">{{ t.services_sub }}</p>
+    <div class="card-grid">
+      {% for item in services %}
+      <a class="service-card" href="{% url 'services:service_detail' item.slug %}">
+        <span class="icon">{{ item.icon }}</span>
+        <h3>{{ item.name }}</h3>
+        <p>{{ item.tagline }}</p>
+        <span class="card-chip">✓ {{ item.count }} {{ t.checklist_count }}</span>
+      </a>
+      {% empty %}
+      <p>—</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="hours">
+  <div class="container">
+    <h2 class="section-title">🕘 {{ t.office_hours }}</h2>
+    <p class="section-sub">{{ t.hours_sub }}</p>
+    <table class="hours-table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t.nav_hours }}</th>
+          <th scope="col">{{ t.office_hours }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for wd in working_days %}
+        <tr{% if forloop.counter0 == today_index %} class="today"{% endif %}>
+          <td>
+            {{ wd.name }}
+            {% if forloop.counter0 == today_index %}<span class="today-badge">{{ t.today }}</span>{% endif %}
+          </td>
+          <td>
+            {% if wd.wd.is_closed %}
+              <span class="closed-text">{{ t.closed }}</span>
+            {% else %}
+              {{ wd.hours }}
+              {% if wd.wd.is_half_day %}<span class="half-text">· {{ t.half_day }}</span>{% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2">—</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section" id="holidays">
+  <div class="container">
+    <h2 class="section-title">🎉 {{ t.holidays_heading }}</h2>
+    <p class="section-sub">{{ t.holidays_sub }}</p>
+    <ul class="holiday-list">
+      {% for item in holidays %}
+      <li class="holiday">
+        <span class="date-box">
+          <strong>{{ item.h.date|date:"d" }}</strong>
+          <span>{{ item.h.date|date:"M" }}</span>
+        </span>
+        <span class="name">{{ item.h.name_en }}{% if lang == "ne" %} / {{ item.h.name_ne }}{% endif %}</span>
+        <span class="rel">
+          {% if item.days == 0 %}{{ t.today }}{% else %}{{ item.days }} {{ t.days_word }}{% endif %}
+        </span>
+      </li>
+      {% empty %}
+      <li class="holiday">—</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+{% if site_info %}
+<section class="section alt" id="info">
+  <div class="container">
+    <div class="info-grid">
+      {% for item in site_info %}
+      <div class="info-card">
+        <span class="i">{{ item.i.icon }}</span>
+        <div>
+          <strong>{{ item.label }}</strong>
+          <span>{{ item.value }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

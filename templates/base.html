@@ -1,0 +1,51 @@
+{% load static %}
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ t.app_name }}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body data-lang="{{ lang }}"{% block body_attrs %}{% endblock %}>
+  {{ t|json_script:"ui-strings" }}
+
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="{% url 'services:home' %}">
+        <span class="brand-mark">🏛</span>
+        <span>{{ t.app_name }}<small>{{ t.app_tagline }}</small></span>
+      </a>
+      <nav class="header-nav" aria-label="Main">
+        <a href="{% url 'services:home' %}#services">{{ t.nav_services }}</a>
+        <a href="{% url 'services:home' %}#hours">{{ t.nav_hours }}</a>
+        <a class="lang-toggle" href="{% url 'set_language' alt_lang %}">{{ t.lang_toggle }}</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="row">
+        <div><strong>{{ t.app_name }}</strong> — {{ t.app_tagline }}</div>
+        <div class="badge-stack">
+          <span class="tech-badge">Gemma 4 · Gemini API</span>
+          <span class="tech-badge">Ollama · local fallback</span>
+          <span class="tech-badge">Django</span>
+        </div>
+      </div>
+      <div class="demo-note">{{ t.demo_note }}</div>
+    </div>
+  </footer>
+
+  <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>
